@@ -19,6 +19,9 @@ class ElevatorLogic(object):
     def __init__(self):
         # Feel free to add any instance variables you want.
         self.destination_floor = None
+        self.floorStack = []
+        self.directionStack = []
+        self.lastDirection = None
         self.callbacks = None
 
     def on_called(self, floor, direction):
@@ -31,6 +34,9 @@ class ElevatorLogic(object):
         direction: the direction the caller wants to go, up or down
         """
         self.destination_floor = floor
+        self.floorStack.append(floor)
+        self.lastDirection = direction
+        self.directionStack.append(direction)
 
     def on_floor_selected(self, floor):
         """
@@ -40,15 +46,41 @@ class ElevatorLogic(object):
 
         floor: the floor that was requested
         """
-        self.destination_floor = floor
+        if self.callbacks.motor_direction == UP:
+            if floor > self.callbacks.current_floor:
+                self.destination_floor = floor
+                self.floorStack.append(floor)
+        if self.callbacks.motor_direction == DOWN:
+            if floor < self.callbacks.current_floor:
+                self.destination_floor = floor
+                self.floorStack.append(floor)
+        if self.callbacks.motor_direction == None:
+            self.destination_floor = floor
+            self.floorStack.append(floor)
 
     def on_floor_changed(self):
         """
         This lets you know that the elevator has moved one floor up or down.
         You should decide whether or not you want to stop the elevator.
         """
-        if self.destination_floor == self.callbacks.current_floor:
-            self.callbacks.motor_direction = None
+
+        # if self.floorStack:
+        if self.lastDirection == self.callbacks.motor_direction:
+            if self.floorStack[0] == self.callbacks.current_floor:
+                self.callbacks.motor_direction = None
+                del self.floorStack[0]
+        # elif self.lastDirection != self.callbacks.motor_direction:
+        #     if self.floorStack[0] == self.callbacks.current_floor:
+        #         self.callbacks.motor_direction = None
+        #         del self.floorStack[0]
+            # elif self.floorStack[-1] != self.callbacks.current_floor:
+                # self.callbacks.motor_direction = self.directionStack.pop()
+
+    def greaterThanCurrentFloor(x):
+        return x > self.callbacks.current_floor
+
+    def lessThanCurrentFloor(x):
+        return x < self.callbacks.current_floor
 
     def on_ready(self):
         """
@@ -56,7 +88,36 @@ class ElevatorLogic(object):
         Maybe passengers have embarked and disembarked. The doors are closed,
         time to actually move, if necessary.
         """
-        if self.destination_floor > self.callbacks.current_floor:
+        # if self.floorStack:
+        #     if self.callbacks.motor_direction == UP:
+        #         workingStack = filter(self.floorStack > self.callbacks.current_floor)
+        #         workingStack.sort()
+        #         if self.workingStack[-1] == self.callbacks.current_floor:
+        #             self.callbacks.motor_direction = None
+        #             self.floorStack.pop()
+        #     if self.callbacks.motor_direction == DOWN:
+        #         workingStack = filter(self.floorStack < self.callbacks.current_floor)
+        #         workingStack.sort()
+        #         if self.workingStack[-1] == self.callbacks.current_floor:
+        #             self.callbacks.motor_direction = None
+        #             self.floorStack.pop()
+        #     if self.callbacks.motor_direction == None:
+        # if self.floorStack[-1] != self.callbacks.current_floor:
+            # self.callbacks.motor_direction = self.directionStack[-1]
+
+        # if self.floorStack:
+        #     if self.floorStack[-1] > self.callbacks.current_floor:
+        #         workingStack = filter(greaterThanCurrentFloor, self.floorStack)
+        #         workingStack.sort(reverse=True)
+        #         self.callbacks.motor_direction = UP
+        #     if self.floorStack[-1] < self.callbacks.current_floor:
+        #         workingStack = filter(lessThanCurrentFloor, self.floorStack)
+        #         workingStack.sort(reverse=True)
+        #         self.callbacks.motor_direction = DOWN
+
+        if self.floorStack[0] > self.callbacks.current_floor:
             self.callbacks.motor_direction = UP
-        elif self.destination_floor < self.callbacks.current_floor:
+            self.lastDirection = UP
+        elif self.floorStack[0] < self.callbacks.current_floor:
             self.callbacks.motor_direction = DOWN
+            self.lastDirection = DOWN
